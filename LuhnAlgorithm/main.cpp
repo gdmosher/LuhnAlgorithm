@@ -7,7 +7,7 @@
 
 //System Libraries
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
+#include <iostream>				// I used a couple deprecated c functions like strncpy() and strcat()
 #undef _CRT_SECURE_NO_WARNINGS
 //#include <cstdlib>
 #include <ctime>
@@ -17,7 +17,8 @@ using namespace std;
 //Global Constants
 
 
-enum CrdCard { AmericanExpress, Visa, MasterCard, Discover, ALL };
+enum CrdCard { AmericanExpress, Visa, MasterCard, Discover, ALL };	// ALL must be last!!
+																	// it is used as a bound for rand() below
 
 //Function Prototypes
 char rndDgit();
@@ -29,7 +30,8 @@ void flipDigit(char[]);
 bool DEBUG = true;
 bool DEBUGrandom = false;
 bool LuhnDEBUG = false;
-bool genCCDEBUG = false;
+bool genCCDEBUG = true;				// turn this on to see numbers as they are generated
+bool flipDEBUG = false;
 #define MAXFIELDSIZE 20
 
 int main(int argc, char** argv) {
@@ -56,19 +58,27 @@ int main(int argc, char** argv) {
 	// 2016-0322 new code to test validation
 	int validCount = 0, invalidCount = 0;
 	for (int i = 0; i < 2E3; i++) {
-		genCC(crdCard, 15, AmericanExpress);
+/*		genCC(crdCard, 0, AmericanExpress);
 		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
-		genCC(crdCard, 13, Visa);
+		genCC(crdCard, 0, Visa);
 		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
 		genCC(crdCard, 16, Visa);
 		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
-		genCC(crdCard, 19, MasterCard);
+		genCC(crdCard, 0, MasterCard);
 		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
-		genCC(crdCard, 16, Discover);
+		genCC(crdCard, 0, Discover);
+		flipDigit(crdCard);
+		validCC(crdCard) ? validCount++ : invalidCount++;
+*/
+	}
+	validCount = 0; invalidCount = 0;
+	for (int i = 0; i < 1E4; i++) {
+		CrdCard ccToMake = static_cast<CrdCard>(rand() % ALL);
+		genCC(crdCard, 0, ccToMake);
 		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
 	}
@@ -78,11 +88,24 @@ int main(int argc, char** argv) {
 	system("pause");
     return 0;
 }
-
+char* PAX[] = { "34", "37" };		// array of prefixes and valid lengths for certain cards
+int	  SAX[] = { 15 };
+char* PVI[] = { "4" };
+int	  SVI[] = { 13, 14, 15, 16 };
+char* PMC[] = { "51", "52", "53", "54", "55" };
+int	  SMC[] = { 16, 17, 18, 19 };
+char* PDI[] = { "6011", "622126", 
+						"622127",			// ... and the rest :)
+						"622925", "644", "645", "646", "647", "648", "649", "65" };
+int	  SDI[] = { 16 };
 void genCC(char cc[], int size, CrdCard ccType) {
+	char* prefix;
+	int len;
 	switch (ccType) {
 	case AmericanExpress:	// 15
-		strncpy(cc, "34", MAXFIELDSIZE);
+		prefix = PAX[rand() % (sizeof(PAX)/sizeof(PAX[0]))];
+		if (size == 0) { size = SAX[rand() % (sizeof(SAX) / sizeof(SAX[0]))]; }
+		strncpy(cc, prefix, MAXFIELDSIZE);
 		//		strcat(cc, "0000000000"); strcat(cc, "123");
 		prpLuhn(cc, size-1);
 		//		cout << cc << endl;
@@ -90,7 +113,9 @@ void genCC(char cc[], int size, CrdCard ccType) {
 		if (genCCDEBUG) cout << cc << endl;
 		break;
 	case Visa:
-		strncpy(cc, "4", MAXFIELDSIZE);
+		prefix = PVI[rand() % (sizeof(PVI) / sizeof(PVI[0]))];
+		if (size == 0) { size = SVI[rand() % (sizeof(SVI) / sizeof(SVI[0]))]; }
+		strncpy(cc, prefix, MAXFIELDSIZE);
 		//		strcat(cc, "0000000000"); strcat(cc, "123");
 		prpLuhn(cc, size - 1);
 		//		cout << cc << endl;
@@ -98,7 +123,9 @@ void genCC(char cc[], int size, CrdCard ccType) {
 		if (genCCDEBUG) cout << cc << endl;
 		break;
 	case MasterCard:
-		strncpy(cc, "51", MAXFIELDSIZE);
+		prefix = PMC[rand() % (sizeof(PMC) / sizeof(PMC[0]))];
+		if (size == 0) { size = SMC[rand() % (sizeof(SMC) / sizeof(SMC[0]))]; }
+		strncpy(cc, prefix, MAXFIELDSIZE);
 		//		strcat(cc, "0000000000"); strcat(cc, "123");
 		prpLuhn(cc, size - 1);
 		//		cout << cc << endl;
@@ -106,7 +133,9 @@ void genCC(char cc[], int size, CrdCard ccType) {
 		if (genCCDEBUG) cout << cc << endl;
 		break;
 	case Discover:
-		strncpy(cc, "6011", MAXFIELDSIZE);
+		prefix = PDI[rand() % (sizeof(PDI) / sizeof(PDI[0]))];
+		if (size == 0) { size = SDI[rand() % (sizeof(SDI) / sizeof(SDI[0]))]; }
+		strncpy(cc, prefix, MAXFIELDSIZE);
 		//		strcat(cc, "0000000000"); strcat(cc, "123");
 		prpLuhn(cc, size - 1);
 		//		cout << cc << endl;
@@ -135,7 +164,7 @@ void flipDigit(char cc[]) {		// should cause a 90% failure with a mod 10 checkdi
 	cc[i] = rndDgit();
 //	cc[6] = '7';
 //	cc[7] = '8';
-	if (genCCDEBUG) cout << cc << endl;
+	if (flipDEBUG) cout << cc << endl;
 	return;
 }
 
