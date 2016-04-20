@@ -27,10 +27,11 @@ void Luhn(char[], int);
 void genCC(char[], int, CrdCard);
 bool validCC(char[]);
 void flipDigit(char[]);
+void transposeDigit(char[]);
 bool DEBUG = true;
 bool DEBUGrandom = false;
 bool LuhnDEBUG = false;
-bool genCCDEBUG = true;				// turn this on to see numbers as they are generated
+bool genCCDEBUG = 1;// false;// true;				// turn this on to see numbers as they are generated
 bool flipDEBUG = false;
 #define MAXFIELDSIZE 20
 
@@ -79,7 +80,8 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 1E4; i++) {
 		CrdCard ccToMake = static_cast<CrdCard>(rand() % ALL);
 		genCC(crdCard, 0, ccToMake);
-		flipDigit(crdCard);
+		transposeDigit(crdCard);
+//		flipDigit(crdCard);
 		validCC(crdCard) ? validCount++ : invalidCount++;
 	}
 	cout << "Valid = " << validCount << ", Invalid = " << invalidCount << ", Ratio = " << (validCount*100.0 / (validCount + invalidCount)) << endl;
@@ -157,13 +159,39 @@ bool validCC(char cc[]) {		// only validates digits given to checkdigit
 
 void flipDigit(char cc[]) {		// should cause a 90% failure with a mod 10 checkdigit
 	int len = strlen(cc);		// because we are not blocking the 10% chance of
-	int i = rand() % (len);		// flipping back to the same digit
-//	i = len - 1;				// otherwise we could attain a %100 failure rate!!
-//	cout << i << endl;
-//	if (i == len-1) cout << "Flipping the checkdigit." << endl;
-	cc[i] = rndDgit();
-//	cc[6] = '7';
-//	cc[7] = '8';
+	int i = rand() % (len - 1);		// flipping back to the same digit
+	//	i = len - 1;				// otherwise we could attain a 100% failure rate!!
+	//	cout << i << endl;
+	//	if (i == len-1) cout << "Flipping the checkdigit." << endl;
+	char newDigit = rndDgit();
+	// 	while (cc[i] == (newDigit = rndDgit())) {}		// don't allow it to flip back to same number
+	cc[i] = newDigit;
+	/*	i++;						// go ahead and flip another
+	while (cc[i] == (newDigit = rndDgit())) {}
+	cc[i] = newDigit;			// 1/9 = .11111 because we know it was wrong and there's only 9 other choices
+	*/
+	//	cc[6] = '7';
+	//	cc[7] = '8';
+	if (flipDEBUG) cout << cc << endl;
+	return;
+}
+void transposeDigit(char cc[]) {		// should cause a 90% failure with a mod 10 checkdigit
+	int len = strlen(cc);		// because we are not blocking the 10% chance of
+	int i = rand() % (len - 2);		// flipping back to the same digit
+	//	i = len - 1;				// otherwise we could attain a 100% failure rate!!
+	//	cout << i << endl;
+	//	if (i == len-1) cout << "Flipping the checkdigit." << endl;
+	char swapDigit = cc[i];
+	cc[i] = cc[i + 1];
+	cc[i + 1] = swapDigit;
+	// 	while (cc[i] == (newDigit = rndDgit())) {}		// don't allow it to flip back to same number
+//	cc[i] = newDigit;
+	/*	i++;						// go ahead and flip another
+	while (cc[i] == (newDigit = rndDgit())) {}
+	cc[i] = newDigit;			// 1/9 = .11111 because we know it was wrong and there's only 9 other choices
+	*/
+	//	cc[6] = '7';
+	//	cc[7] = '8';
 	if (flipDEBUG) cout << cc << endl;
 	return;
 }
